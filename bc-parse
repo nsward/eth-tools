@@ -1,0 +1,61 @@
+#!/usr/bin/python3
+import sys
+#import os
+import re
+
+# USAGE:
+# `./bc_parse in_file.md out_file.bin`
+# where in_file contains all bytecode within backticks ``
+# and out_file will be created or overwritten with pure bytecode prepended with '0x'
+
+## example in_file.md:
+# Move the free memory pointer
+# mstore(0x40, 0x80)
+# `6080`  PUSH 0x80
+# `6040`  PUSH 0x40
+# `52`    MSTORE
+
+# TODO:
+## - create .bin and .bin runtime files?
+## - improve parse_bc() to handle the following parameters:
+#    Single byte placeholders used, sizes determined, then placeholders replaced:
+#        - `CONSTRUCTOR_CODESIZE` `INIT_CODESIZE` `RUNTIME_COODESIZE`
+#    Omitted from bytecode, but used to determine sizes above:
+#        - `END_CONSTRUCTOR`
+
+def parse_args():
+    if len(sys.argv) == 3:
+        in_file = sys.argv[1]
+        out_file = sys.argv[2]
+        return (in_file, out_file)
+    else:
+        print("ERROR: expected 2 arguments, got", len(sys.argv) - 1)
+        sys.exit(1)
+
+def parse_bc(filename):
+    if not os.path.isfile(filename):
+        print("ERROR: input file not found")
+        sys.exit(1)
+    else:
+        with open(filename, "r") as f:
+            file_contents = f.read()
+            bc_list = re.findall(r'\`(.+?)\`', file_contents);
+        bytecode = "0x" +  "".join(bc_list)
+        return bytecode
+
+def write_bc(filename, bytecode):
+    with open(filename, "w") as f:
+        f.write(bytecode)
+
+def main():
+    # get file to parse and file to write to from arguments
+    (in_file, out_file) = parse_args()
+
+    # get the desired bytecode
+    bytecode = parse_bc(in_file)
+
+    # write the bytecode to our out file
+    write_bc(out_file, bytecode)
+
+if __name__ == "__main__":
+    main()
