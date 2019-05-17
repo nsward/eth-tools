@@ -40,7 +40,8 @@ def parse_bc(filename):
         with open(filename, "r") as f:
             file_contents = f.read()
             bc_list = re.findall(r'\`(.+?)\`', file_contents);
-        bytecode = "0x" +  "".join(bc_list)
+        # bytecode = "0x" +  "".join(bc_list)
+        bytecode = "".join(bc_list)
         return bytecode
 
 def write_bc(filename, bytecode):
