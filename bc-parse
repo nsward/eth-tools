@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 import sys
-#import os
+import os
 import re
 
 # USAGE:
-# `./bc_parse in_file.md out_file.bin`
+# `./bc-parse in_file.md out_file.bin`
 # where in_file contains all bytecode within backticks ``
 # and out_file will be created or overwritten with pure bytecode prepended with '0x'
 
@@ -16,12 +16,22 @@ import re
 # `52`    MSTORE
 
 # TODO:
-## - create .bin and .bin runtime files?
+## - create .bin and .bin-runtime files?
 ## - improve parse_bc() to handle the following parameters:
 #    Single byte placeholders used, sizes determined, then placeholders replaced:
-#        - `CONSTRUCTOR_CODESIZE` `INIT_CODESIZE` `RUNTIME_COODESIZE`
+#        - `CONSTRUCTOR_SIZE` `INIT_SIZE` `RUNTIME_SIZE`
 #    Omitted from bytecode, but used to determine sizes above:
 #        - `END_CONSTRUCTOR`
+CONSTRUCTOR_SIZE_STRING = 'CONSTRUCTOR_SIZE'
+END_CONSTRUCTOR_STRING = 'END_CONSTRUCTOR'
+INIT_SIZE_STRING = 'INIT_SIZE'
+RUNTIME_SIZE_STRING = 'RUNTIME_SIZE'
+
+CONSTRUCTOR_SIZE_PLACEHOLDER = 'zz'
+END_CONSTRUCTOR_PLACEHOLDER = 'yy'
+INIT_SIZE_PLACEHOLDER = 'xx'
+RUNTIME_SIZE_PLACEHOLDER = 'ww'
+
 
 def parse_args():
     if len(sys.argv) == 3:
@@ -32,6 +42,25 @@ def parse_args():
         print("ERROR: expected 2 arguments, got", len(sys.argv) - 1)
         sys.exit(1)
 
+def add_placeholder(item):
+    if item == CONSTRUCTOR_SIZE_STRING:
+        return CONSTRUCTOR_SIZE_PLACEHOLDER
+    if item == END_CONSTRUCTOR_STRING:
+        return END_CONSTRUCTOR_PLACEHOLDER
+    if item == INIT_SIZE_STRING:
+        return INIT_SIZE_PLACEHOLDER
+    if item == RUNTIME_SIZE_STRING:
+        return RUNTIME_SIZE_PLACEHOLDER
+    return item
+
+def parse_placeholders(string):
+    print('string:', string)
+    constructor_size = len(string.split(END_CONSTRUCTOR_PLACEHOLDER)[0])
+    print('constructor_size', constructor_size)
+
+    return string
+
+
 def parse_bc(filename):
     if not os.path.isfile(filename):
         print("ERROR: input file not found")
@@ -39,8 +68,13 @@ def parse_bc(filename):
     else:
         with open(filename, "r") as f:
             file_contents = f.read()
-            bc_list = re.findall(r'\`(.+?)\`', file_contents);
-        bytecode = "0x" +  "".join(bc_list)
+            bc_list_raw = re.findall(r'\`(.+?)\`', file_contents);
+            bc_list_with_placeholders = list(map(add_placeholder, bc_list_raw))
+            bc_string_with_placeholders = "".join(bc_list_with_placeholders)
+            bc_string = parse_placeholders(bc_string_with_placeholders)
+            bytecode = '0x' + bc_string
+            print('bytecode', bytecode)
+        # bytecode = "0x" +  "".join(bc_list)
         return bytecode
 
 def write_bc(filename, bytecode):
